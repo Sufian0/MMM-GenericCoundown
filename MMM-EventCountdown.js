@@ -1,7 +1,26 @@
-Module.register("MMM-PrayerCountdown", {
+class CountdownText {
+    constructor() {
+      this.el = document.createElement("span");
+      this.el.classList.add("countdown-text"); 
+    }
+  
+    update(text) {
+      this.el.innerText = text;
+    }
+  }
+  
+  class MainWrapper {
+    constructor() {
+      this.el = document.createElement("div");
+      this.el.classList.add("main-wrapper");
+    }
+  }
+  
+
+Module.register("MMM-EventCountdown", {
 
     defaults: {
-        text: "Next prayer in: ",
+        text: "Next event in: ",
         sound: true,
         threshold: 10_000,
         testStart: 20_000,
@@ -10,41 +29,25 @@ Module.register("MMM-PrayerCountdown", {
 
     start: function() {
     //   this.countdownEl = null;
-        Log.info("Starting MMM-PrayerCountdown DOM.");
+        Log.info("Starting MMM-EventCountdown DOM.");
         this.wrapper = null;
+        this.countdownText = null;
         this.loaded = false;
         this.sound = new Audio();
-        this.sound.src = './sounds/alarm.mp3';
+        this.sound.src = 'file:///D:/Libraries/Documents/1ACode/MagicMirror/modules/MMM-PrayerCountDown/sounds/alarm.mp3'; 
         this.sound.preload = 'auto';
     },
   
     getDom: function() {
 
-        Log.info("Updating MMM-PrayerCountdown DOM.");
-        var self = this;
-
-        if (this.wrapper == null) {
-            this.wrapper = document.createElement("div");
-            this.wrapper.setAttribute("id", "ptimeDOM-mainDiv");
-
-            var span = document.createElement("span");
-            span.setAttribute("id", "ptimeDOM-span");
-            span.className = "small";
-
-
-            this.countdownEl = span;
-
-            Log.log(`leaves ${this.testDelta}`);
-            if(this.testDelta < this.config.threshold) {
-                this.countdownEl.classList.add('flash');
-                Log.log("FLASHING!");
-                } else {
-                this.countdownEl.classList.remove('flash'); 
-                }
-
-            this.wrapper.appendChild(this.countdownEl);
+        Log.info("Updating MMM-EventCountdown DOM.");
+        // var self = this;
+        if (!this.wrapper) {
+            this.wrapper = new MainWrapper();
+            this.countdownText = new CountdownText();
+            this.wrapper.el.appendChild(this.countdownText.el);
         }
-        return this.wrapper;
+        return this.wrapper.el;
     },
   
     updateCountdown: function(name, rawTime) {
@@ -53,12 +56,13 @@ Module.register("MMM-PrayerCountdown", {
         // audio.preload = 'auto';
 
         const oldNow = (Date.now() + this.config.testStart);
+        let testDiff = oldNow - Date.now()
 
         const intervalId = setInterval(() => {
 
             const now = Date.now();
             // const diff = rawTime - now;
-            const testDiff = oldNow - now;
+            // const testDiff = oldNow - now;
 
             const hours = Math.floor(testDiff / 1000 / 60 / 60);
             const minutes = Math.floor(testDiff / 1000 / 60) % 60;
@@ -69,9 +73,10 @@ Module.register("MMM-PrayerCountdown", {
             // const seconds = Math.floor(diff / 1000) % 60;
             
             const timeStr = `${hours}:${minutes}:${seconds}`;
+            testDiff -= 1000; // update diff
 
-            this.testDelta = testDiff;
-            Log.log(`cryptic ${this.testDelta}`);
+            // this.testDelta = testDiff;
+            Log.log(`cryptic ${testDiff}`);
 
             // if(testDiff < this.config.threshold) {
             //     this.countdownEl.classList.add('flash');
@@ -79,15 +84,24 @@ Module.register("MMM-PrayerCountdown", {
             //     } else {
             //     this.countdownEl.classList.remove('flash'); 
             //     }
+
+
             
-            this.countdownEl.innerHTML = `${name} in ${timeStr}`;
+            // this.countdownEl.innerHTML = `${name} in ${timeStr}`;
+            this.countdownText.update(`${name} in ${timeStr}`);
+
+            if (testDiff < this.config.threshold) { 
+                this.countdownText.el.classList.toggle("flash");
+                Log.log("FLASHING!");
+              }
 
             if (testDiff <= 0) {
                 clearInterval(intervalId);
                 if(this.config.sound) {
                     this.sound.play(); 
                   }
-                this.countdownEl.innerHTML = `${name} now`;
+                  this.countdownText.update(`${name} now`);
+                // this.countdownEl.innerHTML = `${name} now`;
                 Log.log("play the song!");
               }
 
@@ -100,7 +114,7 @@ Module.register("MMM-PrayerCountdown", {
     },
 
     notificationReceived: function(notification, payload) {
-        if (notification === 'NEXT_PRAYER_UPDATED') {
+        if (notification === 'NEXT_EVENT_UPDATED') {
           const name = JSON.stringify(payload.name);
           const rawTime = payload.time;
           this.updateCountdown(name, rawTime);
