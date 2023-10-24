@@ -1,8 +1,8 @@
-/* .countdown-text {
+.countdown-text {
 	font-size: 30px; 
 	text-align: center;
-  } */
-
+  }
+  
   .flash {
 	animation: flash 1s infinite; 
   }

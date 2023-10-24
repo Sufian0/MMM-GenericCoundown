@@ -15,6 +15,17 @@ class CountdownText {
       this.el.classList.add("main-wrapper");
     }
   }
+
+  // class audioElement {
+  //   constructor() {
+  //     this.audio = document.createElement("AUDIO");
+  //     this.audio.setAttribute("crossOrigin", "anonymous");
+  //     const audioSource = document.createElement("source");
+  //     audioSource.type = "audio/mp3";
+  //     audioSource.src = "file:///D:/Libraries/Documents/1ACode/MagicMirror/modules/MMM-PrayerCountDown/sounds/alarm.mp3";
+  //     this.audio.appendChild(audioSource)
+  //   }
+  // }
   
 
 Module.register("MMM-EventCountdown", {
@@ -33,8 +44,9 @@ Module.register("MMM-EventCountdown", {
         this.wrapper = null;
         this.countdownText = null;
         this.loaded = false;
+        // this.sound = new Audio('file:///D:/Libraries/Documents/1ACode/MagicMirror/modules/MMM-PrayerCountDown/sounds/alarm.mp3', {crossorigin: "anonymous"});
         this.sound = new Audio();
-        this.sound.src = 'file:///D:/Libraries/Documents/1ACode/MagicMirror/modules/MMM-PrayerCountDown/sounds/alarm.mp3'; 
+        this.sound.src = 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3'; 
         this.sound.preload = 'auto';
     },
   
@@ -45,7 +57,9 @@ Module.register("MMM-EventCountdown", {
         if (!this.wrapper) {
             this.wrapper = new MainWrapper();
             this.countdownText = new CountdownText();
+            // var alarmAudio = document.createElement("AUDIO");
             this.wrapper.el.appendChild(this.countdownText.el);
+            // this.wrapper.el.appendChild(new audioElement().audio);
         }
         return this.wrapper.el;
     },
@@ -99,10 +113,10 @@ Module.register("MMM-EventCountdown", {
                 clearInterval(intervalId);
                 if(this.config.sound) {
                     this.sound.play(); 
+                    Log.log("play the song!");
                   }
                   this.countdownText.update(`${name} now`);
                 // this.countdownEl.innerHTML = `${name} now`;
-                Log.log("play the song!");
               }
 
         }, 1000); // update every 1 second        
