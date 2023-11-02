@@ -28,7 +28,7 @@ class CountdownText {
   // }
   
 
-Module.register("MMM-EventCountdown", {
+Module.register("MMM-GenericCoundown", {
 
     defaults: {
         text: "Next event in: ",
@@ -38,6 +38,10 @@ Module.register("MMM-EventCountdown", {
         testDelta: 0
     },
 
+    getStyles: function() {
+      return ["MMM-GenericCoundown.css"];
+  },
+
     start: function() {
     //   this.countdownEl = null;
         Log.info("Starting MMM-EventCountdown DOM.");
@@ -46,7 +50,7 @@ Module.register("MMM-EventCountdown", {
         this.loaded = false;
         // this.sound = new Audio('file:///D:/Libraries/Documents/1ACode/MagicMirror/modules/MMM-PrayerCountDown/sounds/alarm.mp3', {crossorigin: "anonymous"});
         this.sound = new Audio();
-        this.sound.src = 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3'; 
+        this.sound.src = 'modules/MMM-GenericCoundown/sounds/alarm.mp3'; 
         this.sound.preload = 'auto';
     },
   
