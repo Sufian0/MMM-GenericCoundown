@@ -16,12 +16,24 @@ class CountdownText {
     }
   }
 
+  const soundMap = {
+    "wolf": {
+      "logMessage": "wolf sound selected",
+      "soundSrc": 'modules/MMM-GenericCountdown/sounds/alarm.mp3',
+      "preload": 'auto'
+    },
+    "default": {
+      "logMessage": "no sound selected",
+      "soundSrc": '',
+      "preload": ''
+    }
+  };
+
 Module.register("MMM-GenericCountdown", {
 
     defaults: {
-        text: "Next event in: ",
-        sound: 'none', //choice of wolf or none
-        flashThreshold: 10, //when should the countdown start flashing in minutes? Set to 0 to disable
+        sound: false,                        // Select the alarm sound when timer is over. Required parameter, please define in config.js
+        flashThreshold: false,               // Select when the flashing will occur. Required parameter, please define in config.js
     },
 
     getStyles: function() {
@@ -33,20 +45,11 @@ Module.register("MMM-GenericCountdown", {
         this.wrapper = null;
         this.countdownText = null;
         this.loaded = false;
-        switch (this.config.sound){
-            case 'wolf':
-                Log.log("wolf sound selected");
-                this.sound = new Audio();
-                this.sound.src = 'modules/MMM-GenericCountdown/sounds/alarm.mp3'; 
-                this.sound.preload = 'auto';
-                break;
-            default:
-                Log.log("no sound selected");
-                this.sound = null;
-                this.sound.src = '';
-                this.sound.preload = '';
-                break;
-        }
+        this.sound = new Audio();
+        var soundConfig = soundMap[this.config.sound] || soundMap["default"];
+        Log.log(soundConfig.logMessage);
+        this.sound.src = soundConfig.soundSrc;
+        this.sound.preload = soundConfig.preload;
     },
   
     getDom: function() {
@@ -114,6 +117,20 @@ Module.register("MMM-GenericCountdown", {
           this.delta = Math.floor((rawTime - now)/60000);
           Log.log("delta: " + this.delta);
           if ( this.delta > 0 ) {
+            /* The following is to test if the sound is playing at the right time
+              this.delta = 2;
+              if(this.delta = 2) {
+                const intervalId = setInterval(() => {
+                  for (let i = 5; i > 0; i--) {
+                    if(this.config.sound && i == 1) {
+                      this.sound.play(); 
+                      Log.log("play the song!");
+                      clearInterval(intervalId);
+                    }
+                  }
+              }, 1000);
+            }
+            end of test*/ 
               Log.log("delta is " + this.delta + ", update ticker");
               dstr = convertMinsToHrsMins(this.delta);
               if (dstr != "") {
@@ -130,8 +147,8 @@ Module.register("MMM-GenericCountdown", {
               }
           } else {
               Log.log("delta is less than 0, reset ticker");
-              this.delta = 0;
-              if(this.config.sound) {
+              // this.delta = 0;
+              if(this.config.sound && this.delta == 0) {
                 this.sound.play(); 
                 Log.log("play the song!");
               }
@@ -153,5 +170,18 @@ Module.register("MMM-GenericCountdown", {
           this.updateCountdown(name, rawTime, cmin);
 
         }
-      }
+      },
+      
+    // notificationReceived: function (notification, payload, sender) {
+    //     switch (notification) {
+    //         case 'CLOCK_MINUTE':
+    //             Log.log("clock minute notification received from: " + sender + ", payload: " + payload);
+    //             let cMin = parseInt(payload);
+
+    //             // update only the duration
+    //             this.updateDuration(false, false, cMin);
+    //             break;
+    //     }
+    // }
+      
   });
