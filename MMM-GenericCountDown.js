@@ -162,26 +162,51 @@ Module.register("MMM-GenericCountdown", {
       this.updateDom();
     },
 
+    updateDisplay: function() {
+      // Convert this.delta into hours and minutes
+      const hours = Math.floor(this.delta / 60);
+      const minutes = this.delta % 60;
+      
+      let timeString = "";
+      if (hours > 0) {
+          timeString += hours + "h "; // Add hours to string
+      }
+      if (minutes > 0 || hours === 0) {
+          timeString += minutes + "m"; // Add minutes to string
+      }
+  
+      // Update the countdown text
+      if (timeString !== "") {
+          const countdownMessage = `Countdown: ${timeString}`;
+          this.countdownText.update(countdownMessage);
+      } else {
+          // Handle the case where countdown is finished
+          this.countdownText.update("Event Started");
+      }
+  
+      // Flashing effect if within threshold
+      if (this.delta < this.config.flashThreshold) {
+          this.countdownText.el.classList.add("flash");
+      } else {
+          this.countdownText.el.classList.remove("flash");
+      }
+  
+      this.updateDom(); // Update the DOM with the new text
+    },
+
     notificationReceived: function(notification, payload) {
-        if (notification === 'NEXT_EVENT_UPDATED') {
+      if (notification === 'NEXT_EVENT_UPDATED') {
+          // Initial setup with event details
           const name = JSON.stringify(payload.name);
           const rawTime = payload.time;
-          const cmin = payload.min;
-          this.updateCountdown(name, rawTime, cmin);
-
-        }
-      },
-      
-    // notificationReceived: function (notification, payload, sender) {
-    //     switch (notification) {
-    //         case 'CLOCK_MINUTE':
-    //             Log.log("clock minute notification received from: " + sender + ", payload: " + payload);
-    //             let cMin = parseInt(payload);
-
-    //             // update only the duration
-    //             this.updateDuration(false, false, cMin);
-    //             break;
-    //     }
-    // }
+          this.updateCountdown(name, rawTime, -1); // -1 indicates initial setup
+      } else if (notification === 'CLOCK_MINUTE') {
+          // Update countdown every minute
+          if (this.delta > 0) { 
+              this.delta -= 1; // Decrease by one minute
+              this.updateDisplay(); 
+          }
+      }
+    },
       
   });
