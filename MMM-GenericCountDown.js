@@ -55,7 +55,6 @@ Module.register("MMM-GenericCountdown", {
     getDom: function() {
 
         Log.info("Updating MMM-EventCountdown DOM.");
-        // var self = this;
         if (!this.wrapper) {
             this.wrapper = new MainWrapper();
             this.countdownText = new CountdownText();
@@ -72,100 +71,31 @@ Module.register("MMM-GenericCountdown", {
 
       // truncate to nearest minutes
       let now = Math.floor(dnow.valueOf()/60000) * 60000;
-
-      // sync with main clock
-      if (cmin != -1) {
-          // Log.log("sync minute before: " + now + ", cmin: " + cmin);
-          let h = Math.floor(now/3600000);
-          let m = (now/60000) % 60;
-
-          // min goes to next hour
-          if (now < cmin) {
-              h = h - 1;
-          }
-
-          now = (h * 3600000) + (cmin * 60000);
-          Log.log("sync minute after: " + now + ", h: " + h + ", m: " + m);
-      }
-
       this.delta = 0;
-
-      // get date string
-      //var dmsg = new moment(dnow).locale(this.config.language).format('dddd D MMM YYYY');
       this.tickermsg = "";
 
       if (rawTime >= now) {
-          const convertMinsToHrsMins = (mins) => {
-              let h = Math.floor(mins / 60);
-              let m = mins % 60;
-              
-              if (h > 0) {
-                  if (m != 0) {
-                      return `${h}` + this.translate('h') + " " + `${m}` + this.translate('m');
-                  } else {
-                      return `${h}` + this.translate('h');
-                  }
-              } else {
-                  if (m != 0) {
-                      return `${m}` + this.translate('m');
-                  } else {
-                      return "";
-                  }
-              }
-          }
 
-          this.delta = Math.floor((rawTime - now)/60000);
-          Log.log("delta: " + this.delta);
-          if ( this.delta > 0 ) {
-            /* The following is to test if the sound is playing at the right time
-              this.delta = 2;
-              if(this.delta = 2) {
-                const intervalId = setInterval(() => {
-                  for (let i = 5; i > 0; i--) {
-                    if(this.config.sound && i == 1) {
-                      this.sound.play(); 
-                      Log.log("play the song!");
-                      clearInterval(intervalId);
-                    }
-                  }
-              }, 1000);
-            }
-            end of test*/ 
-              Log.log("delta is " + this.delta + ", update ticker");
-              dstr = convertMinsToHrsMins(this.delta);
-              if (dstr != "") {
-                  var nmsg = `${name} in ${dstr}`;
-                  Log.log(`${name} in ${dstr}`);
-                  this.countdownText.update(`${nmsg}`);
-                  if (this.delta < this.config.flashThreshold) { 
-                    this.countdownText.el.classList.toggle("flash");
-                    Log.log("FLASHING!");
-                  }
-              } else {
-                  Log.log("dstring is empty");
-                  this.countdownText.update(``);
-              }
+          this.delta = Math.floor((rawTime - now) / 60000);
+
+          // Check if the event is still in the future
+          if (this.delta > 0) {
+              Log.log("Delta is " + this.delta + ", updating display");
+              this.updateDisplay(); // Call updateDisplay to handle the visual update
           } else {
-              Log.log("delta is less than 0, reset ticker");
-              // this.delta = 0;
-              if(this.config.sound && this.delta == 0) {
-                this.sound.play(); 
-                Log.log("play the song!");
-              }
-              this.countdownText.update(``);
+              // Handle the event start or past event
+              Log.log("Event has started or already passed");
+              this.delta = 0;
+              this.updateDisplay();
           }
-      } else {
-          this.delta = 0;
       }
-      
-      this.loaded = true;
-      this.updateDom();
     },
 
     updateDisplay: function() {
       // Convert this.delta into hours and minutes
       const hours = Math.floor(this.delta / 60);
       const minutes = this.delta % 60;
+      Log.log(`we have delta: ${this.delta} and we have minutes: ${minutes}`);
       
       let timeString = "";
       if (hours > 0) {
@@ -177,11 +107,17 @@ Module.register("MMM-GenericCountdown", {
   
       // Update the countdown text
       if (timeString !== "") {
-          const countdownMessage = `Countdown: ${timeString}`;
+          const countdownMessage = `${this.eventName} is in: ${timeString}`;
           this.countdownText.update(countdownMessage);
+          this.soundPlayed = false; // Reset sound played flag
       } else {
+          if (!this.soundPlayed) {
+            this.sound.play();
+            this.soundPlayed = true; // Set flag to prevent multiple plays
+            Log.log("Sound played for event: " + this.eventName)
+          }
           // Handle the case where countdown is finished
-          this.countdownText.update("Event Started");
+          this.countdownText.update(`${this.eventName}: Event Started`);
       }
   
       // Flashing effect if within threshold
@@ -190,21 +126,26 @@ Module.register("MMM-GenericCountdown", {
       } else {
           this.countdownText.el.classList.remove("flash");
       }
-  
+      this.loaded = true;
       this.updateDom(); // Update the DOM with the new text
     },
 
-    notificationReceived: function(notification, payload) {
+    notificationReceived: function(notification, payload, sender) {
       if (notification === 'NEXT_EVENT_UPDATED') {
           // Initial setup with event details
-          const name = JSON.stringify(payload.name);
+          Log.log("Event notification received from: " + sender.name + ", payload: " + JSON.stringify(payload));
+          this.eventName = payload.name; // Store the event name
           const rawTime = payload.time;
-          this.updateCountdown(name, rawTime, -1); // -1 indicates initial setup
+          this.updateCountdown(this.eventName, rawTime, -1); // -1 indicates initial setup
       } else if (notification === 'CLOCK_MINUTE') {
           // Update countdown every minute
+          Log.log("CLOCK_MINUTE notification received from: " + sender.name + ", payload: " + payload);
           if (this.delta > 0) { 
-              this.delta -= 1; // Decrease by one minute
+              Log.log(`Delta pre decrement: ${this.delta} `);
+              this.delta -= 1; // Decrease by one 
+              Log.log(`Delta post decrement but pre display: ${this.delta} `);
               this.updateDisplay(); 
+              Log.log(`Delta post display: ${this.delta} `);
           }
       }
     },
