@@ -140,9 +140,14 @@ Module.register("MMM-GenericCountdown", {
       } else if (notification === 'CLOCK_MINUTE') {
           // Update countdown every minute
           Log.log("CLOCK_MINUTE notification received from: " + sender.name + ", payload: " + payload);
-          if (this.delta > 0) { 
+          if (this.delta > 0) {
+              let decrementNumber = 0;
+              decrementNumber += 1; // number of times it has been decremented
+              Log.log(`how many times have we decremented? ${decrementNumber} `);
               Log.log(`Delta pre decrement: ${this.delta} `);
-              this.delta -= 1; // Decrease by one 
+              if (decrementNumber != 1) {
+                this.delta -= 1; // Decrease by one 
+              }
               Log.log(`Delta post decrement but pre display: ${this.delta} `);
               this.updateDisplay(); 
               Log.log(`Delta post display: ${this.delta} `);
